@@ -1,0 +1,5 @@
+*.swp
+/input.txt
+/output.txt
+/build.sh.gpg
+/run.sh.gpg

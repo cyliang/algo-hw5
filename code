@@ -1,0 +1,57 @@
+# vim: set syntax=python filetype=python:
+
+import msgpack
+
+class WorkingList:
+	def __init__(self, candidateList):
+		# pairs = [(b, a), ...] and sort by 'b'
+		self.pairs = [(candidateList[i + 1], candidateList[i]) for i in xrange(0, len(candidateList), 2)]
+		self.pairs.sort()
+
+		# save the smallest 'a' of each interval
+		min_a, min_i = self.pairs[-1][1], len(self.pairs) - 1
+		for i, (b, a) in ((i, self.pairs[i]) for i in reversed(xrange(len(self.pairs)))):
+			if a < min_a:
+				min_a, min_i = a, i
+
+			self.pairs[i] = (b, a, min_i)
+	
+	def findMinQuery(self, c):
+		# First, search for all interval (a, b) satisfying b > c.
+		# Then return the interval (a, b) that has the smallest a.
+		p, r = 0, len(self.pairs) - 1
+		while True:
+			if p > r:
+				if p >= len(self.pairs):
+					return False
+				return self.pairs[self.pairs[p][2]][1::-1]
+
+			mid = (p + r) / 2
+			mid_b = self.pairs[mid][0]
+			if c <= mid_b:
+				r = mid - 1
+			else:
+				p = mid + 1
+
+
+def minRangeQuery(queryList, candidateList):
+	working = WorkingList(candidateList)
+	for i in xrange(0, len(queryList), 2):
+		minInt = working.findMinQuery(queryList[i])
+		if minInt == False or minInt[0] > queryList[i + 1]:
+			queryList[i], queryList[i + 1] = -1, -1
+		else:
+			queryList[i], queryList[i + 1] = minInt
+	
+	return queryList
+
+
+with open("input.txt", "rb") as input_file, open("output.txt", "wb") as output_file:
+	inPack = msgpack.Unpacker(input_file, use_list = True)
+
+	problem_count = inPack.unpack()
+	for i in xrange(problem_count):
+		queryPairs = inPack.unpack()
+		candidatePairs = inPack.unpack()
+		result = minRangeQuery(queryPairs, candidatePairs)
+		msgpack.pack(result, output_file)
